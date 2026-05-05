@@ -2,29 +2,30 @@ import userModel from "../models/user.model.js"
 import catchAsync from "../utils/catchAsync.js"
 import jwt from "jsonwebtoken"
 import { sendVerificationEmail } from "../services/mail.service.js"
+import { success } from "zod"
 
 export const register = catchAsync(async (req, res) => {
-    const { username, email, password } = req.body
+  const { username, email, password } = req.body
 
-    const isUserAlreadyExists = await userModel.findOne({
-        $or: [{ email }, { username }]
+  const isUserAlreadyExists = await userModel.findOne({
+    $or: [{ email }, { username }]
+  })
+
+  if (isUserAlreadyExists) {
+    return res.status(400).json({
+      message: 'User with this email or username already exists',
+      success: false,
+      err: 'User already exists'
     })
+  }
 
-    if (isUserAlreadyExists) {
-        return res.status(400).json({
-            message: 'User with this email or username already exists',
-            success: false,
-            err: 'User already exists'
-        })
-    }
+  const user = await userModel.create({ username, email, password })
 
-    const user = await userModel.create({ username, email, password })
+  const emailVerificationToken = jwt.sign({
+    email: user.email
+  }, process.env.JWT_SECRET)
 
-    const emailVerificationToken = jwt.sign({
-        email: user.email
-    }, process.env.JWT_SECRET)
-
-    const htmlTemplate = `
+  const htmlTemplate = `
 <!DOCTYPE html>
 <html>
 <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, sans-serif;">
@@ -118,50 +119,114 @@ export const register = catchAsync(async (req, res) => {
 </html>
 `;
 
-    await sendVerificationEmail({
-        to: email,
-        subject: 'Welcome to Perplexity',
-        html: htmlTemplate
-    })
+  await sendVerificationEmail({
+    to: email,
+    subject: 'Welcome to Perplexity',
+    html: htmlTemplate
+  })
 
-    return res.status(201).json({
-        success: true,
-        message: 'User registered successfully',
-        user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            verified: user.verified
-        }
-    })
+  return res.status(201).json({
+    success: true,
+    message: 'User registered successfully',
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      verified: user.verified
+    }
+  })
 
 })
 
-export const verifyEmail = catchAsync(async (req, res) => {
-    const { token } = req.query
+export const login = catchAsync(async (req, res) => {
+  const { email, password } = req.body
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET)
+  const user = await userModel.findOne({ email })
 
-    const user = await userModel.findOne({ email: decode.email })
+  if (!user) {
+    return res.status(400).json({
+      message: 'Invalid email or password',
+      success: false
+    })
+  }
 
-    if (!user) {
-        return res.status(400).json({
-            message: "Invalid token.",
-            success: false
-        })
+  const isPasswordMatch = await user.comparePassword(password)
+
+  if (!isPasswordMatch) {
+    return res.status(400).json({
+      message: 'Invalid email or password',
+      success: false
+    })
+  }
+
+  if (!user.verified) {
+    return res.status(400).json({
+      message: 'Please verify your email before logging in.',
+      success: false
+    })
+  }
+
+  const token = jwt.sign({
+    id: user._id,
+    username: user.username
+  }, process.env.JWT_SECRET, { expiresIn: '7d' })
+
+  res.cookie('token', token)
+
+  res.status(200).json({
+    message: 'Login Successful',
+    success: true,
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email
     }
+  })
+})
 
-    if (user.verified) {
-        return res.send(`
+export const getMe = catchAsync(async (req, res) => {
+  const userId = req.user.id
+  const user = await userModel.findById(userId).select('-password')
+
+  if (!user) {
+    return res.status(404).json({
+      message: 'User not found',
+      success: false
+    })
+  }
+
+  res.status(200).json({
+    message: 'User details fetched successfully',
+    success: true,
+    user
+  })
+})
+
+export const verifyEmail = catchAsync(async (req, res) => {
+  const { token } = req.query
+
+  const decode = jwt.verify(token, process.env.JWT_SECRET)
+
+  const user = await userModel.findOne({ email: decode.email })
+
+  if (!user) {
+    return res.status(400).json({
+      message: "Invalid token.",
+      success: false
+    })
+  }
+
+  if (user.verified) {
+    return res.send(`
                 <h1>Already Verified</h1>
                 <p>Your email is already verified.</p>
             `);
-    }
+  }
 
-    user.verified = true
-    await user.save()
+  user.verified = true
+  await user.save()
 
-    res.send(`
+  res.send(`
         <h1>Email verified successfully</h1>
         <p>Your email has now been verified. Now, you can login to your account.</p>
     `)
