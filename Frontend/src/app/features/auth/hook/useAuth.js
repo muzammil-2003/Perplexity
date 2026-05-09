@@ -1,17 +1,18 @@
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import { useCallback } from 'react'
 import { register, login, getMe } from '../service/auth.api'
 import { setUser, setLoading, setError } from '../auth.slice'
 
 export const useAuth = () => {
     const dispatch = useDispatch()
+    const user = useSelector(state => state.auth.user)
+    const loading = useSelector(state => state.auth.loading)
+    const error = useSelector(state => state.auth.error)
 
     const handleRegister = async ({ email, username, password }) => {
-
         try {
-
             dispatch(setLoading(true))
-            const data = await register({ email, username, password })
-
+            await register({ email, username, password })
         } catch (error) {
             dispatch(setError(error.response?.data?.message || 'Registration failed'))
         }
@@ -21,7 +22,6 @@ export const useAuth = () => {
     }
 
     const handleLogin = async ({ email, password }) => {
-
         try {
             dispatch(setLoading(true))
             const data = await login({ email, password })
@@ -35,7 +35,7 @@ export const useAuth = () => {
         }
     }
 
-    const fetchCurrentUser = async () => {
+    const fetchCurrentUser = useCallback(async () => {
         try {
             dispatch(setLoading(true))
             const data = await getMe()
@@ -47,7 +47,7 @@ export const useAuth = () => {
         finally {
             dispatch(setLoading(false))
         }
-    }
+    }, [dispatch])
 
-    return { handleRegister, handleLogin, fetchCurrentUser }
+    return { user, loading, error, handleRegister, handleLogin, fetchCurrentUser }
 }

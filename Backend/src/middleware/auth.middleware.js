@@ -4,7 +4,7 @@ export const authUser = (req, res, next) => {
 
     const token = req.cookies.token
     if (!token) {
-        res.status(401).json({
+        return res.status(401).json({
             message: "Unauthorized",
             success: false
         })
@@ -16,7 +16,7 @@ export const authUser = (req, res, next) => {
         next()
 
     } catch (error) {
-        res.status(401).json({
+        return res.status(401).json({
             message: "Unauthorized",
             success: false
         })
