@@ -2,6 +2,7 @@ import express from 'express'
 import cors from "cors"
 import cookieParser from 'cookie-parser'
 import authRouter from './routes/auth.routes.js'
+import chatRouter from './routes/chat.routes.js'
 import errorHandler from './middleware/error.middleware.js'
 import morgan from 'morgan'
 
@@ -19,7 +20,7 @@ app.use(cors({
 app.use(morgan('dev'))
 
 app.use('/api/auth', authRouter)
-
+app.use('/api/chats', chatRouter)
 
 
 app.use(errorHandler)
