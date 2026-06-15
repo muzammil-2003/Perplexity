@@ -16,6 +16,14 @@ export const login = async ({email, password}) => {
 }
 
 export const getMe = async () => {
-    const response = await api.get('/api/auth/get-me')
-    return response.data
+    try {
+        const response = await api.get('/api/auth/get-me')
+        return response.data
+    } catch (error) {
+        // Silently return null on 401 (not logged in)
+        if (error.response?.status === 401) {
+            return null
+        }
+        throw error
+    }
 }

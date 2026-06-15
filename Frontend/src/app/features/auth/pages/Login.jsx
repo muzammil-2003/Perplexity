@@ -27,7 +27,6 @@ const Login = () => {
     const submitForm = async (e) => {
         e.preventDefault()
         await handleLogin(formData)
-        navigate('/')
     }
 
     return (
@@ -40,6 +39,11 @@ const Login = () => {
                 </div>
 
                 <form onSubmit={submitForm} className="space-y-6">
+                    {error && (
+                        <div className="rounded-2xl bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-400">
+                            {error}
+                        </div>
+                    )}
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                             Email
