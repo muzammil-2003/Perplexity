@@ -62,13 +62,11 @@ export const useChat = () => {
             content: message.content,
             role: message.role
         }))
-        // replace messages for opened chat to avoid duplicates
         dispatch(setMessages({ chatId, messages: formattedMessages }))
         dispatch(setCurrentChatId(chatId))
     }
 
     const handleNewChat = () => {
-        // clear selection so next send will create a new chat on backend
         dispatch(setCurrentChatId(null))
     }
 

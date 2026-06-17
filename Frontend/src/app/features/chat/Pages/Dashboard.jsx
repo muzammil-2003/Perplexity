@@ -60,7 +60,7 @@ const Dashboard = () => {
           </div>
 
           {/* New Chat Button */}
-          <button onClick={handleNewChat} className="mt-6 w-full bg-violet-600 hover:bg-violet-500 transition rounded-xl py-3 flex items-center justify-center gap-2 font-medium">
+          <button onClick={handleNewChat} className="mt-6 w-full bg-violet-600 hover:bg-violet-500 transition rounded-xl py-3 flex items-center justify-center gap-2 font-medium cursor-pointer">
             <Plus size={18} />
             New Chat
           </button>
@@ -93,7 +93,8 @@ const Dashboard = () => {
                   e.stopPropagation()
                   handleDeleteChat(chat.id)
                 }}
-                className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 transition flex items-center justify-center"
+                // Don't let chat title overflow when long and push delete button out of view or cause layout issues like compressing width
+                className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 transition flex items-center justify-center cursor-pointer"
               >
                 <Trash2 size={16} />
               </button>
@@ -123,7 +124,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-3 bg-zinc-900 px-4 py-2 rounded-xl border border-zinc-800">
 
             <div className="w-10 h-10 rounded-full bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center font-bold">
-              M
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
 
             <div>
@@ -135,6 +136,14 @@ const Dashboard = () => {
                 {user?.email || 'user@example.com'}
               </p>
             </div>
+            <button onClick={() => {
+              document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+              window.location.reload()
+              }}
+              className="ml-4 px-3 py-1 rounded-md bg-red-600 hover:bg-red-500 transition text-sm font-medium cursor-pointer"
+            >
+              Logout
+            </button>
           </div>
         </header>
 
@@ -196,7 +205,7 @@ const Dashboard = () => {
 
             <button
               onClick={handleSubmitMesssage}
-              className="w-14 h-14 rounded-xl bg-violet-600 hover:bg-violet-500 transition flex items-center justify-center"
+              className="w-14 h-14 rounded-xl bg-violet-600 hover:bg-violet-500 transition flex items-center justify-center cursor-pointer"
             >
 
               <Send size={20} />
